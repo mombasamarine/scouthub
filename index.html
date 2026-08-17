@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Scout Progress System</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#183027}
+header{background:#174d32;color:white;padding:20px;text-align:center}
+header h1{margin:0 0 6px}.container{max-width:1100px;margin:25px auto;padding:0 15px}
+.card{background:white;border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 3px 12px #0001}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+input,select,button{width:100%;padding:11px;border:1px solid #ccd7d1;border-radius:8px;font-size:15px}
+button{background:#174d32;color:white;border:0;cursor:pointer;font-weight:bold}button:hover{background:#236b46}
+.stat{font-size:28px;font-weight:bold}.muted{color:#66756e}.progress{height:12px;background:#e3e9e5;border-radius:20px;overflow:hidden}.bar{height:100%;background:#2d8a57}
+table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px solid #e5ebe7;text-align:left}
+.badge{padding:5px 9px;border-radius:15px;background:#e8f4ed;color:#17633b;font-size:13px}
+.ai{background:#eef7f1;border-left:5px solid #2d8a57}
+.actions{display:flex;gap:10px}.actions button{width:auto}
+@media(max-width:650px){.actions{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+<h1>🏕️ AI Scout Progress System</h1>
+<div>Unit registration, training and progress management</div>
+</header>
+
+<div class="container">
+<div class="grid">
+  <div class="card"><div class="muted">Scout Units</div><div class="stat" id="unitCount">1</div></div>
+  <div class="card"><div class="muted">Registered Scouts</div><div class="stat" id="scoutCount">0</div></div>
+  <div class="card"><div class="muted">Average Progress</div><div class="stat" id="avgProgress">0%</div></div>
+  <div class="card"><div class="muted">Leaders</div><div class="stat" id="leaderCount">1</div></div>
+</div>
+
+<div class="card">
+<h2>👨‍✈️ Unit & Leader</h2>
+<div class="grid">
+<div><label>Unit name</label><input id="unitName" value="My Scout Unit"></div>
+<div><label>Unit number</label><input id="unitNumber" value="UNIT-001"></div>
+<div><label>Leader name</label><input id="leaderName" value="Unit Leader"></div>
+<div><label>Leader role</label><input id="leaderRole" value="Scout Leader"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>🧑 Register a Scout</h2>
+<div class="grid">
+<div><label>Scout full name</label><input id="name" placeholder="Enter Scout name"></div>
+<div><label>Scout ID</label><input id="id" placeholder="e.g. S001"></div>
+<div><label>Age</label><input id="age" type="number" min="5" max="30"></div>
+<div><label>Date joined</label><input id="joined" type="date"></div>
+<div><label>Current rank</label>
+<select id="rank"><option>Beginner</option><option>Junior</option><option>Intermediate</option><option>Advanced</option></select>
+</div>
+</div>
+<br><button onclick="addScout()">Register Scout</button>
+</div>
+
+<div class="card">
+<h2>📊 Scout Progress</h2>
+<table>
+<thead><tr><th>Scout</th><th>Unit</th><th>Rank</th><th>Progress</th><th>Training</th></tr></thead>
+<tbody id="scoutTable"></tbody>
+</table>
+</div>
+
+<div class="card ai">
+<h2>🤖 AI Progress Assistant</h2>
+<p id="aiText">Register Scouts and the assistant will analyze their training progress.</p>
+<div class="grid">
+<button onclick="aiReady()">Who is ready for the next rank?</button>
+<button onclick="aiNeeds()">Who needs training?</button>
+<button onclick="aiSummary()">How is my unit progressing?</button>
+</div>
+</div>
+</div>
+
+<script>
+let scouts = JSON.parse(localStorage.getItem("scouts") || "[]");
+
+function save(){localStorage.setItem("scouts",JSON.stringify(scouts)); render();}
+function addScout(){
+ const name=document.getElementById("name").value.trim();
+ const id=document.getElementById("id").value.trim();
+ const age=document.getElementById("age").value;
+ const joined=document.getElementById("joined").value;
+ const rank=document.getElementById("rank").value;
+ if(!name||!id||!age){alert("Please enter the Scout name, ID and age.");return;}
+ if(scouts.some(s=>s.id===id)){alert("That Scout ID already exists.");return;}
+ scouts.push({name,id,age,joined,rank,progress:0});
+ ["name","id","age","joined"].forEach(x=>document.getElementById(x).value="");
+ save();
+}
+function render(){
+ const unit=document.getElementById("unitName").value;
+ document.getElementById("scoutCount").textContent=scouts.length;
+ document.getElementById("avgProgress").textContent=(scouts.length?Math.round(scouts.reduce((a,s)=>a+s.progress,0)/scouts.length):0)+"%";
+ document.getElementById("scoutTable").innerHTML=scouts.map((s,i)=>`
+ <tr><td><b>${esc(s.name)}</b><br><span class="muted">${esc(s.id)} • Age ${esc(s.age)}</span></td>
+ <td>${esc(unit)}</td><td><span class="badge">${esc(s.rank)}</span></td>
+ <td><div>${s.progress}%</div><div class="progress"><div class="bar" style="width:${s.progress}%"></div></div></td>
+ <td><button onclick="setProgress(${i})">Update</button></td></tr>`).join("");
+}
+function setProgress(i){
+ let p=prompt("Enter completed training percentage (0-100):",scouts[i].progress);
+ if(p!==null && !isNaN(p) && p>=0 && p<=100){scouts[i].progress=Number(p);save();}
+}
+function aiReady(){
+ const ready=scouts.filter(s=>s.progress>=80);
+ document.getElementById("aiText").textContent=ready.length?
+ "Based on the approved records, these Scouts are at 80% or above: "+ready.map(s=>s.name).join(", ")+". The leader should confirm the official rank requirements before promotion.":
+ "No Scout is currently at 80% or above. Continue training and update the records.";
+}
+function aiNeeds(){
+ const needs=scouts.filter(s=>s.progress<80);
+ document.getElementById("aiText").textContent=needs.length?
+ "Scouts needing more training: "+needs.map(s=>s.name+" ("+s.progress+"%)").join(", ")+". Review their individual training requirements.":
+ "All registered Scouts are at 80% or above.";
+}
+function aiSummary(){
+ const avg=scouts.length?Math.round(scouts.reduce((a,s)=>a+s.progress,0)/scouts.length):0;
+ document.getElementById("aiText").textContent=`Unit ${document.getElementById("unitName").value} has ${scouts.length} registered Scout(s). Average recorded progress is ${avg}%. The leader should use the official Scout programme to verify each requirement and rank.`;
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+document.getElementById("unitName").addEventListener("input",render);
+render();
+</script>
+</body>
+</html>
