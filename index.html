@@ -126,6 +126,17 @@ function aiSummary(){
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
 document.getElementById("unitName").addEventListener("input",render);
 render();
+function login() {
+    let troop = document.getElementById("troop").value;
+    let password = document.getElementById("password").value;
+    
+    if(password === "mombasa marine1475") {
+        alert("Welcome Troop " + troop + "!");
+        window.location.href = "dashboard.html";
+    } else {
+        alert("Wrong Password! Try again.");
+    }
+  }
 </script>
 </body>
 </html>
